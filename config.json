@@ -13,7 +13,7 @@
     "fermeture": 23
   },
   "style": {
-    "photo": "assets/salle-1.jpg",
+    "photo": "salle-1.jpg",
     "accent": "#B4501E",
     "text": "#FFFFFF",
     "muted": "#E6D8CE"
