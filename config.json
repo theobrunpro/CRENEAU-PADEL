@@ -1,0 +1,65 @@
+{
+  "club": {
+    "name": "team padel",
+    "city": "Mondragon",
+    "booking_url": "teampadel.fr",
+    "phone": "07 57 50 05 65",
+    "timezone": "Europe/Paris",
+    "terrains": {
+      "double": 4,
+      "single": 1
+    },
+    "ouverture": 8,
+    "fermeture": 23
+  },
+  "style": {
+    "photo": "assets/salle-1.jpg",
+    "accent": "#B4501E",
+    "text": "#FFFFFF",
+    "muted": "#E6D8CE"
+  },
+  "moments": {
+    "journee": {
+      "bouton": "Aujourd'hui",
+      "titre": "Aujourd'hui,",
+      "jour": 0,
+      "de": 8,
+      "a": 23,
+      "accroche": "🎾 Les terrains dispo aujourd'hui"
+    },
+    "soir": {
+      "bouton": "Ce soir",
+      "titre": "Ce soir,",
+      "jour": 0,
+      "de": 17,
+      "a": 23,
+      "accroche": "🔥 Il reste de la place ce soir !"
+    },
+    "demain": {
+      "bouton": "Demain",
+      "titre": "Demain,",
+      "jour": 1,
+      "de": 8,
+      "a": 23,
+      "accroche": "📅 Déjà envie de jouer demain ?"
+    }
+  },
+  "max_lignes": 7,
+  "source": {
+    "type": "demo",
+    "relais": "https://dispos-padel.REMPLACER.workers.dev"
+  },
+  "auto": {
+    "publier": false,
+    "horaires": [
+      {
+        "heure": 9,
+        "moment": "journee"
+      },
+      {
+        "heure": 17,
+        "moment": "soir"
+      }
+    ]
+  }
+}

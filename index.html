@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Story dispos – Team Padel</title>
+<meta name="theme-color" content="#14100E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dispos Padel">
+<link rel="apple-touch-icon" href="assets/icone.png">
+<style>
+  @font-face { font-family: Montserrat; font-weight: 500; src: url(assets/fonts/Montserrat-Medium.ttf); }
+  @font-face { font-family: Montserrat; font-weight: 600; src: url(assets/fonts/Montserrat-SemiBold.ttf); }
+  @font-face { font-family: Montserrat; font-weight: 700; src: url(assets/fonts/Montserrat-Bold.ttf); }
+  @font-face { font-family: Montserrat; font-weight: 900; src: url(assets/fonts/Montserrat-Black.ttf); }
+
+  :root {
+    --bg: #14100E; --card: #211A16; --line: #33281F;
+    --text: #F5EDE7; --muted: #B5A69B; --accent: #B4501E; --accent-2: #D0662F; --error: #F08A6A;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 500 16px/1.4 Montserrat, system-ui, sans-serif;
+    padding: 0 16px calc(150px + env(safe-area-inset-bottom));
+  }
+  main { max-width: 480px; margin: 0 auto; }
+  header { padding: 22px 0 14px; display: flex; align-items: baseline; justify-content: space-between; }
+  header h1 { margin: 0; font-weight: 900; font-size: 24px; letter-spacing: -0.02em; }
+  header span { color: var(--muted); font-size: 14px; }
+
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: var(--card);
+         padding: 6px; border-radius: 16px; }
+  .seg button { border: 0; border-radius: 11px; padding: 12px 4px; font: 700 15px Montserrat;
+                background: transparent; color: var(--muted); }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+
+  .preview { position: relative; margin: 16px auto 8px; width: min(100%, 300px); }
+  canvas { width: 100%; aspect-ratio: 9 / 16; display: block; border-radius: 18px;
+           box-shadow: 0 18px 40px rgba(0,0,0,.45); background: var(--card); transition: opacity .2s; }
+  .loading canvas { opacity: .35; }
+  .preview p { display: none; position: absolute; inset: 0; margin: 0; place-content: center; text-align: center;
+               font-weight: 700; padding: 24px; white-space: pre-line; }
+  .loading .preview p, .error .preview p { display: grid; }
+  .error .preview p { color: var(--error); }
+  .error canvas { opacity: .15; }
+
+  .status { display: flex; justify-content: center; align-items: center; gap: 12px; color: var(--muted);
+            font-size: 13px; margin: 10px 0 22px; }
+  .status b { color: var(--text); font-weight: 600; }
+  .status button { border: 0; border-radius: 10px; padding: 7px 12px; background: var(--card);
+                   color: var(--accent-2); font: 700 13px Montserrat; }
+
+  h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+       color: var(--muted); margin: 0 0 10px; }
+  .card { background: var(--card); border-radius: 16px; padding: 4px 16px; margin-bottom: 22px; }
+  .slot { display: flex; align-items: center; justify-content: space-between; padding: 11px 0;
+          border-bottom: 1px solid var(--line); }
+  .slot:last-child { border-bottom: 0; }
+  .slot strong { font-weight: 900; font-size: 18px; }
+  .slot span { color: var(--muted); font-weight: 600; font-size: 15px; }
+  .empty { color: var(--muted); padding: 14px 0; text-align: center; font-size: 14px; margin: 0; }
+
+  textarea { width: 100%; min-height: 170px; resize: vertical; border: 0; border-radius: 16px;
+             background: var(--card); color: var(--text); padding: 14px; font: 500 15px/1.5 Montserrat; }
+
+  .actions { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+             background: linear-gradient(transparent, var(--bg) 30%); }
+  .actions div { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .actions button { border: 0; border-radius: 16px; padding: 16px 8px; font: 700 16px Montserrat; color: #fff; }
+  .actions button:disabled { opacity: .35; }
+  #btn-story { background: var(--accent); }
+  #btn-wa { background: #1F7A4D; }
+  .actions small { grid-column: 1 / -1; display: flex; justify-content: center; gap: 22px; }
+  .actions small button { background: none; padding: 4px; color: var(--muted); font: 600 13px Montserrat;
+                          text-decoration: underline; }
+
+  #toast { position: fixed; left: 50%; top: 18px; transform: translate(-50%, -80px); transition: transform .25s;
+           background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600;
+           font-size: 14px; max-width: calc(100% - 32px); text-align: center; z-index: 10; }
+  #toast.show { transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>team padel</h1><span>Story dispos</span></header>
+
+  <nav class="seg" id="moments" aria-label="Moment"></nav>
+
+  <div class="preview"><canvas id="story" width="1080" height="1920"></canvas><p id="overlay"></p></div>
+  <div class="status"><span id="status"></span><button id="refresh" type="button">Actualiser</button></div>
+
+  <h2>Terrains libres</h2>
+  <div class="card" id="slots"></div>
+
+  <h2>Message WhatsApp</h2>
+  <textarea id="message" aria-label="Message WhatsApp"></textarea>
+</main>
+
+<div class="actions"><div>
+  <button id="btn-story" type="button">Story Instagram</button>
+  <button id="btn-wa" type="button">WhatsApp</button>
+  <small><button id="btn-dl" type="button">Télécharger l'image</button><button id="btn-copy" type="button">Copier le texte</button></small>
+</div></div>
+<div id="toast" role="status"></div>
+
+<script type="module">
+import { drawStory, buildMessage, loadFonts, loadImage, slotLabel } from "./story.js";
+
+const params = new URLSearchParams(location.search);
+const $ = id => document.getElementById(id);
+const cfg = await fetch("config.json", { cache: "no-store" }).then(r => r.json());
+const [photo] = await Promise.all([loadImage(cfg.style.photo), loadFonts()]);
+
+// Date et heure à Mondragon (?date=AAAA-MM-JJ&heure=HH pour simuler un autre moment)
+function parisNow() {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+    timeZone: cfg.club.timezone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hour12: false,
+  }).formatToParts(new Date()).map(x => [x.type, x.value]));
+  return {
+    date: params.get("date") || `${p.year}-${p.month}-${p.day}`,
+    hour: params.has("heure") ? Number(params.get("heure")) : Number(p.hour) % 24,
+  };
+}
+const addDays = (iso, n) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+};
+const pad = h => `${String(h).padStart(2, "0")}:00`;
+
+// Créneaux d'exemple, toujours les mêmes pour une date donnée
+function demo(date) {
+  let s = [...date].reduce((a, c) => a * 31 + c.charCodeAt(0), 7) >>> 0;
+  const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
+  const heures = {};
+  for (let h = cfg.club.ouverture; h <= cfg.club.fermeture; h++) {
+    let double = 0;
+    for (let t = 0; t < cfg.club.terrains.double; t++) if (rnd() < 0.3) double++;
+    heures[pad(h)] = { double, single: rnd() < 0.35 ? 1 : 0 };
+  }
+  return { date, maj: new Date().toISOString(), heures, demo: true };
+}
+
+// Terrains libres d'une date : lus en direct via le relais du club
+async function fetchDispos(date) {
+  if (cfg.source.type === "demo") return demo(date);
+  const r = await fetch(`${cfg.source.relais}?date=${date}`, { cache: "no-store" });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || data.erreur) throw new Error(data.erreur || `Relais : erreur ${r.status}`);
+  return data;
+}
+
+function defaultMoment() {
+  const now = parisNow();
+  if (now.hour >= cfg.club.fermeture - 1) return "demain";
+  return now.hour >= 15 ? "soir" : "journee";
+}
+
+// Moment choisi + dispos -> données de la story
+function compose(momentId, data) {
+  const now = parisNow();
+  const m = cfg.moments[momentId];
+  const hours = [];
+  for (let h = m.de; h <= m.a; h++) if (m.jour || h > now.hour) hours.push(pad(h));
+  const slots = hours
+    .map(h => ({ start: h, double: data.heures[h]?.double || 0, single: data.heures[h]?.single || 0 }))
+    .filter(s => s.double + s.single > 0);
+  return { m, day: data.date, hours, slots };
+}
+
+const dayFor = momentId => addDays(parisNow().date, cfg.moments[momentId].jour);
+
+// Mode robot : la page lit les dispos, dessine la story puis expose l'image et le texte
+if (params.has("export")) {
+  const momentId = params.get("moment") || "soir";
+  try {
+    const c = compose(momentId, await fetchDispos(dayFor(momentId)));
+    drawStory($("story"), { cfg, photo, moment: c.m, day: c.day, slots: c.slots });
+    window.__story = {
+      png: $("story").toDataURL("image/png"),
+      message: buildMessage({ cfg, moment: c.m, day: c.day, slots: c.slots }),
+      slots: c.slots.length, day: c.day, demo: cfg.source.type === "demo",
+    };
+  } catch (e) {
+    window.__story = { erreur: e.message };
+  }
+} else {
+  setupUI();
+}
+
+function setupUI() {
+  const state = { moment: params.get("moment") || defaultMoment(), file: null, run: 0 };
+
+  for (const [id, m] of Object.entries(cfg.moments)) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = m.bouton; b.dataset.id = id;
+    b.onclick = () => { state.moment = id; generate(); };
+    $("moments").append(b);
+  }
+  $("refresh").onclick = generate;
+  $("btn-story").onclick = shareStory;
+  $("btn-wa").onclick = shareWhatsApp;
+  $("btn-dl").onclick = download;
+  $("btn-copy").onclick = () => copy().then(() => toast("Texte copié"), () => toast("Copie impossible"));
+  // Appli rouverte (retour sur l'écran) : on relit les dispos
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) generate(); });
+
+  generate();
+
+  // Cherche les terrains libres puis génère la story et le message
+  async function generate() {
+    const run = ++state.run;
+    for (const b of $("moments").children) b.setAttribute("aria-pressed", b.dataset.id === state.moment);
+    setMode("loading", "Recherche des terrains libres…");
+    let data;
+    try {
+      data = await fetchDispos(dayFor(state.moment));
+    } catch (e) {
+      if (run === state.run) setMode("error", `Planning illisible pour le moment.\n${e.message}\nRéessaie avec « Actualiser ».`);
+      return;
+    }
+    if (run !== state.run) return;  // un autre choix a été fait entre-temps
+
+    const c = compose(state.moment, data);
+    drawStory($("story"), { cfg, photo, moment: c.m, day: c.day, slots: c.slots });
+    $("message").value = buildMessage({ cfg, moment: c.m, day: c.day, slots: c.slots });
+    state.file = null;
+    $("story").toBlob(b => { state.file = new File([b], `story-${c.day}-${state.moment}.png`, { type: "image/png" }); });
+
+    $("slots").innerHTML = c.slots.length
+      ? c.slots.map(s => `<div class="slot"><strong>${s.start.replace(":", "h")}</strong><span>${slotLabel(s)}</span></div>`).join("")
+      : `<p class="empty">${c.hours.length ? "Tout est complet." : "Plus de créneau à venir pour ce moment."}</p>`;
+
+    const heure = new Date(data.maj).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: cfg.club.timezone });
+    setMode("ready", data.demo ? "<b>Mode démo</b> : créneaux d'exemple" : `Terrains lus à <b>${heure}</b>`);
+  }
+
+  function setMode(mode, msg) {
+    document.body.className = mode === "ready" ? "" : mode;
+    const ready = mode === "ready";
+    for (const id of ["btn-story", "btn-wa", "btn-dl", "btn-copy"]) $(id).disabled = !ready;
+    $("overlay").textContent = ready ? "" : msg;
+    $("status").innerHTML = ready ? msg : mode === "loading" ? "Recherche en cours…" : "Erreur de lecture";
+    if (!ready && mode === "error") {
+      $("slots").innerHTML = `<p class="empty">—</p>`;
+      $("message").value = "";
+    }
+  }
+
+  function copy() {
+    return navigator.clipboard ? navigator.clipboard.writeText($("message").value) : Promise.reject();
+  }
+
+  function canShareFile() {
+    return state.file && navigator.canShare && navigator.canShare({ files: [state.file] });
+  }
+
+  // Partage natif du téléphone : Instagram > Story, ou WhatsApp > groupe
+  function shareStory() {
+    if (!canShareFile()) return download();
+    navigator.share({ files: [state.file] }).catch(() => {});
+  }
+
+  function shareWhatsApp() {
+    const text = $("message").value;
+    copy().catch(() => {});  // filet de sécurité si WhatsApp n'affiche pas le texte
+    if (canShareFile()) {
+      navigator.share({ files: [state.file], text }).then(() => toast("Texte copié aussi, colle-le si besoin")).catch(() => {});
+    } else {
+      download();
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    }
+  }
+
+  function download() {
+    const a = document.createElement("a");
+    a.href = $("story").toDataURL("image/png");
+    a.download = state.file?.name || "story.png";
+    a.click();
+  }
+}
+
+let toastTimer;
+function toast(msg) {
+  $("toast").textContent = msg;
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $("toast").classList.remove("show"), 2500);
+}
+</script>
+</body>
+</html>
